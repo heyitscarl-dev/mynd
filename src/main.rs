@@ -8,22 +8,11 @@ pub mod compiler;
 
 fn main() {
     let args = env::args().collect::<Vec<String>>();
-    let input = args.get(1);
+    let input = args.get(1).expect("Usage: mynd <input> [output?]");
     let output = args.get(2);
-    
-    if let None = input {
-        eprintln!("Usage: mynd <input> [output]");
-        exit(1);
-    }
 
-    let source = fs::read_to_string(input.unwrap());
-
-    if let Err(e) = source {
-        eprintln!("Could not open '{}': {:?}", input.unwrap(), e);
-        exit(2);
-    }
-
-    let compiled = compile(source.unwrap()).unwrap();
+    let source = fs::read_to_string(input).expect("Could not open input file.");
+    let compiled = compile(source).expect("Could not compile input file.");
     
     if let Some(output) = output {
         let path = Path::new(output);
@@ -33,7 +22,7 @@ fn main() {
         }
 
         let mut file = File::create(path).expect("Could not create the output file.");
-        let _ = file.write(compiled.as_bytes());
+        let _ = file.write_all(compiled.as_bytes());
 
         println!("Successfully wrote file.");
     } else {
