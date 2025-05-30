@@ -22,7 +22,7 @@ If you want to do more reading on brainf*ck, check out its [wikipedia page](http
 
 ## optimization
 
-This compiler is _very, very basic_, but I included a tiny optimization: instead of repeatidly incrementing the 
+This compiler is _very, very basic_, but I included a tiny optimization: instead of repeatedly incrementing the 
 pointer (or data), i instead sum up the total value of the manipulation and apply that:
 
 ```
