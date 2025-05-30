@@ -4,6 +4,9 @@ use crate::lexer::tokenize;
 
 pub mod node;
 
+#[cfg(test)]
+mod test;
+
 pub fn parse(source: impl Into<String>) -> Vec<Node> {
     let tokens = tokenize(source);
     let mut index = 0;
