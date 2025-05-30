@@ -68,9 +68,18 @@ fn test_mixed() {
 }
 
 #[test]
+fn test_unmatched_closing_bracket() {
+    let source = "[+[-]]]";
+    let result_exp = Err(ParsingError::UnopenedClosingBracket);
+    let result_ret = parse(source);
+
+    assert_eq!(result_exp, result_ret);
+}
+
+#[test]
 fn test_unmatched_opening_bracket() {
-    let source = "[+[-]";
-    let result_exp = Err(ParsingError::UnclosedOpeningBracket(4));
+    let source = "[[+-+-]";
+    let result_exp = Err(ParsingError::UnclosedOpeningBracket);
     let result_ret = parse(source);
 
     assert_eq!(result_exp, result_ret);

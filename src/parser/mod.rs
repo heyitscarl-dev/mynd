@@ -12,44 +12,37 @@ mod test;
 pub fn parse(source: impl Into<String>) -> Result<Vec<Node>, ParsingError> {
     let tokens = tokenize(source);
     let mut index = 0;
+    let mut level = 0;
 
-    let nodes = parse_nodes(&tokens, &mut index)?;
+    let nodes = parse_nodes(&tokens, &mut index, &mut level)?;
 
-    // if there's a ']' left after parsing,
-    // it's an unopened bracket. (i don't think this can
-    // happen, but i'm not sure)
-
-    if index < tokens.len() {
-        if tokens[index] == ']' {
-            return Err(ParsingError::UnopenedClosingBracket(index))
-        }
+    if level != 0 {
+        return Err(ParsingError::UnclosedOpeningBracket)
     }
 
     Ok(nodes)
 }
 
-pub fn parse_nodes(tokens: &Vec<char>, index: &mut usize) -> Result<Vec<Node>, ParsingError> {
+pub fn parse_nodes(tokens: &Vec<char>, index: &mut usize, level: &mut usize) -> Result<Vec<Node>, ParsingError> {
     let mut nodes = Vec::new();
 
     while let Some(&c) = tokens.get(*index) {
         if c == ']' {
+            if *level == 0 {
+                return Err(ParsingError::UnopenedClosingBracket);
+            }
+            *level -= 1;
             return Ok(nodes);
         }
 
-        let node = parse_node(tokens, index);
+        let node = parse_node(tokens, index, level);
         nodes.push(node?);
-    }
-
-    // If we hit EOF inside a loop, there's an unclosed '['
-
-    if tokens.get(index.saturating_sub(1)) == Some(&'[') {
-        return Err(ParsingError::UnclosedOpeningBracket(*index))
     }
 
     Ok(nodes)
 }
 
-fn parse_node(tokens: &Vec<char>, index: &mut usize) -> Result<Node, ParsingError> {
+fn parse_node(tokens: &Vec<char>, index: &mut usize, level: &mut usize) -> Result<Node, ParsingError> {
     let token = tokens[*index];
     
     let node = match token {
@@ -59,11 +52,11 @@ fn parse_node(tokens: &Vec<char>, index: &mut usize) -> Result<Node, ParsingErro
         ',' => Node::Accept,
         '[' => {
             *index += 1;
-            Node::Loop(parse_nodes(tokens, index)?)
-        },
+            *level += 1;
 
-        // If there's a ']' outside a loop, it wasn't opened
-        ']' => return Err(ParsingError::UnopenedClosingBracket(*index)),
+            Node::Loop(parse_nodes(tokens, index, level)?)
+        },
+        ']' => unreachable!("invalid close loop operator"),
         _ => unreachable!("invalid token: {}", token),
     };
 
