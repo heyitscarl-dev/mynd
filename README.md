@@ -48,9 +48,9 @@ Next, cd into the cloned directory:
 cd mynd
 ```
 
-Now you can use the following command to transpile the `res/main.bf` file to assembly, and then assemble, link and run the
+Now you can use the following command to transpile the `<input>` file to assembly, and then assemble, link and run the
 resulting file:
 
 ```bash
-cargo run --quiet > main.s && as main.s -o main.o && gcc -o main main.o -nostdlib -static
+cargo run --quiet -- <input> main.s && as main.s -o main.o && gcc -o main main.o -nostdlib -static
 ```
