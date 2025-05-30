@@ -26,8 +26,8 @@ pub fn parse(source: impl Into<String>) -> Result<Vec<Node>, ParsingError> {
 pub fn parse_nodes(tokens: &Vec<char>, index: &mut usize, level: &mut usize) -> Result<Vec<Node>, ParsingError> {
     let mut nodes = Vec::new();
 
-    while let Some(&c) = tokens.get(*index) {
-        if c == ']' {
+    while *index < tokens.len() {
+        if tokens[*index] == ']' {
             if *level == 0 {
                 return Err(ParsingError::UnopenedClosingBracket);
             }
@@ -48,28 +48,35 @@ fn parse_node(tokens: &Vec<char>, index: &mut usize, level: &mut usize) -> Resul
     let node = match token {
         '>' | '<' => parse_ptr(tokens, index),
         '+' | '-' => parse_dat(tokens, index),
-        '.' => Node::Output,
-        ',' => Node::Accept,
-        '[' => {
+        '.' => {
             *index += 1;
+            Node::Output
+        },
+        ',' => {
+            *index += 1;
+            Node::Accept
+        },
+        '[' => {
+            *index += 1;    // skip '['
             *level += 1;
 
-            Node::Loop(parse_nodes(tokens, index, level)?)
+            let body = parse_nodes(tokens, index, level)?;
+
+            *index += 1;    // skip ']'
+            Node::Loop(body)
         },
         ']' => unreachable!("invalid close loop operator"),
         _ => unreachable!("invalid token: {}", token),
     };
 
-    *index += 1;
-
-    return Ok(node);
+    Ok(node)
 }
 
 fn parse_ptr(tokens: &Vec<char>, index: &mut usize) -> Node {
     let mut val = 0;
 
-    while let Some(&c) = tokens.get(*index) {
-        match c {
+    while *index < tokens.len() {
+        match tokens[*index] {
             '>' => val += 1,
             '<' => val -= 1,
             _ => break,
@@ -77,15 +84,14 @@ fn parse_ptr(tokens: &Vec<char>, index: &mut usize) -> Node {
         *index += 1;
     }
     
-    *index -= 1;
-    return Node::ModPtr(val);
+    Node::ModPtr(val)
 }
 
 fn parse_dat(tokens: &Vec<char>, index: &mut usize) -> Node {
     let mut val = 0;
 
-    while let Some(&c) = tokens.get(*index) {
-        match c {
+    while *index < tokens.len() {
+        match tokens[*index] {
             '+' => val += 1,
             '-' => val -= 1,
             _ => break,
@@ -93,7 +99,6 @@ fn parse_dat(tokens: &Vec<char>, index: &mut usize) -> Node {
         *index += 1;
     }
     
-    *index -= 1;
-    return Node::ModDat(val);
+    Node::ModDat(val)
 }
 

@@ -1,4 +1,4 @@
-use std::{env, fs::{self, File}, io::Write, path::Path, process::exit};
+use std::{env, fs::{self, File}, io::Write, path::Path};
 
 use compiler::compile;
 
