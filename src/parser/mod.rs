@@ -1,35 +1,55 @@
+use error::ParsingError;
 use node::Node;
 
 use crate::lexer::tokenize;
 
 pub mod node;
+pub mod error;
 
 #[cfg(test)]
 mod test;
 
-pub fn parse(source: impl Into<String>) -> Vec<Node> {
+pub fn parse(source: impl Into<String>) -> Result<Vec<Node>, ParsingError> {
     let tokens = tokenize(source);
     let mut index = 0;
 
-    parse_nodes(&tokens, &mut index)
+    let nodes = parse_nodes(&tokens, &mut index)?;
+
+    // if there's a ']' left after parsing,
+    // it's an unopened bracket. (i don't think this can
+    // happen, but i'm not sure)
+
+    if index < tokens.len() {
+        if tokens[index] == ']' {
+            return Err(ParsingError::UnopenedClosingBracket(index))
+        }
+    }
+
+    Ok(nodes)
 }
 
-pub fn parse_nodes(tokens: &Vec<char>, index: &mut usize) -> Vec<Node> {
+pub fn parse_nodes(tokens: &Vec<char>, index: &mut usize) -> Result<Vec<Node>, ParsingError> {
     let mut nodes = Vec::new();
 
     while let Some(&c) = tokens.get(*index) {
         if c == ']' {
-            return nodes;
+            return Ok(nodes);
         }
 
         let node = parse_node(tokens, index);
-        nodes.push(node);
+        nodes.push(node?);
     }
 
-    nodes
+    // If we hit EOF inside a loop, there's an unclosed '['
+
+    if tokens.get(index.saturating_sub(1)) == Some(&'[') {
+        return Err(ParsingError::UnclosedOpeningBracket(*index))
+    }
+
+    Ok(nodes)
 }
 
-fn parse_node(tokens: &Vec<char>, index: &mut usize) -> Node {
+fn parse_node(tokens: &Vec<char>, index: &mut usize) -> Result<Node, ParsingError> {
     let token = tokens[*index];
     
     let node = match token {
@@ -39,15 +59,17 @@ fn parse_node(tokens: &Vec<char>, index: &mut usize) -> Node {
         ',' => Node::Accept,
         '[' => {
             *index += 1;
-            Node::Loop(parse_nodes(tokens, index))
+            Node::Loop(parse_nodes(tokens, index)?)
         },
-        ']' => todo!(),
+
+        // If there's a ']' outside a loop, it wasn't opened
+        ']' => return Err(ParsingError::UnopenedClosingBracket(*index)),
         _ => unreachable!("invalid token: {}", token),
     };
 
     *index += 1;
 
-    return node;
+    return Ok(node);
 }
 
 fn parse_ptr(tokens: &Vec<char>, index: &mut usize) -> Node {

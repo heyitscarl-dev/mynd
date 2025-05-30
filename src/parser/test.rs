@@ -1,10 +1,10 @@
-use super::{node::Node, parse};
+use super::{error::ParsingError, node::Node, parse};
 
 #[test]
 fn test_moddat_sequence() {
     let source = "+++---";
     let nodes_exp = vec![Node::ModDat(0)];
-    let nodes_ret = parse(source);
+    let nodes_ret = parse(source).unwrap();
 
     assert_eq!(nodes_exp, nodes_ret);
 }
@@ -13,7 +13,7 @@ fn test_moddat_sequence() {
 fn test_modptr_sequence() {
     let source = ">><<><><<";
     let nodes_exp = vec![Node::ModPtr(-1)];
-    let nodes_ret = parse(source);
+    let nodes_ret = parse(source).unwrap();
 
     assert_eq!(nodes_exp, nodes_ret);
 }
@@ -29,7 +29,7 @@ fn test_simple_loop() {
         Node::Output,
         Node::Accept
     ])];
-    let nodes_ret = parse(source);
+    let nodes_ret = parse(source).unwrap();
 
     assert_eq!(nodes_exp, nodes_ret);
 }
@@ -44,7 +44,7 @@ fn test_nested_loop() {
             Node::ModPtr(-1)
         ])
     ])];
-    let nodes_ret = parse(source);
+    let nodes_ret = parse(source).unwrap();
 
     assert_eq!(nodes_exp, nodes_ret);
 }
@@ -62,13 +62,16 @@ fn test_mixed() {
         ]),
         Node::ModDat(-4)
     ];
-    let nodes_ret = parse(source);
+    let nodes_ret = parse(source).unwrap();
 
     assert_eq!(nodes_exp, nodes_ret);
 }
 
 #[test]
-#[ignore = "not yet implemented"]
-fn test_unmatched_brackets() {
-    todo!()
+fn test_unmatched_opening_bracket() {
+    let source = "[+[-]";
+    let result_exp = Err(ParsingError::UnclosedOpeningBracket(4));
+    let result_ret = parse(source);
+
+    assert_eq!(result_exp, result_ret);
 }
