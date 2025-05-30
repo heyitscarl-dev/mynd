@@ -2,14 +2,13 @@ pub const TOKEN_CHARS: [char; 8] = ['>', '<', '+', '-', '.', ',', '[', ']'];
 
 pub fn tokenize(source: impl Into<String>) -> Vec<char> {
     let source: String      = source.into();
-    let source: Vec<char>   = source.chars()
+    source.chars()
         .filter(is_token)
-        .collect();
-    source
+        .collect()
 }
 
-fn is_token(char: &char) -> bool {
-    TOKEN_CHARS.contains(char)
+fn is_token(c: &char) -> bool {
+    TOKEN_CHARS.contains(c)
 }
 
 #[cfg(test)]
